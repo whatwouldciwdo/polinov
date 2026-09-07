@@ -6,12 +6,12 @@ services:
     container_name: polinov-app
     restart: always
     ports:
-      - "3000:3000"
+      - "3113:3113"
     env_file:
       - .env
     environment:
       - NODE_ENV=production
-      - PORT=3000
+      - PORT=3113
       - HOSTNAME=0.0.0.0
     volumes:
       # Persistent storage for uploaded candidate files and photos

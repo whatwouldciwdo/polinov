@@ -67,8 +67,8 @@ DATABASE_URL="postgresql://postgres:Cilego2026.@10.8.140.69:5432/polinov?schema=
 NEXTAUTH_SECRET="inovasi-2026"
 
 # Sesuaikan dengan IP Server Ubuntu atau Domain Anda
-# Contoh: http://10.8.140.xxx:3000 atau https://polinov.perusahaan.com
-NEXTAUTH_URL="http://localhost:3000"
+# Contoh: http://10.8.140.xxx:3113 atau https://polinov.perusahaan.com
+NEXTAUTH_URL="http://localhost:3113"
 ```
 
 > **Catatan Database Remote**:
@@ -116,7 +116,7 @@ docker compose logs -f polinov-app
 ```
 
 Aplikasi sekarang sudah berjalan dan dapat diakses di:
-`http://<IP_SERVER_UBUNTU>:3000`
+`http://<IP_SERVER_UBUNTU>:3113`
 
 ---
 
