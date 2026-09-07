@@ -87,13 +87,12 @@ NEXTAUTH_URL="http://localhost:3113"
 
 ## 4. Persiapkan Izin Direktori Uploads
 
-Aplikasi menyimpan file berkas calon dan foto di `./public/uploads`.
-Di dalam container, aplikasi berjalan dengan user non-root (UID `1001`). Berikan izin direktori agar container dapat menulis file upload:
+Aplikasi menyimpan berkas calon dan foto inovator di `./public/uploads`.
+Agar container Docker (yang berjalan dengan user non-root UID `1001`) dan user host dapat membaca serta menulis file upload tanpa kendala izin (permission denied), berikan izin penuh pada folder uploads:
 
 ```bash
 mkdir -p public/uploads/candidates
-sudo chown -R 1001:1001 public/uploads
-sudo chmod -R 775 public/uploads
+sudo chmod -R 777 public/uploads
 ```
 
 ---
