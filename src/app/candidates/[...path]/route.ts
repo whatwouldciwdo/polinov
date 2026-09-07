@@ -2,46 +2,6 @@ import { NextRequest, NextResponse } from "next/server";
 import path from "path";
 import fs from "fs";
 
-function resolveUploadFile(pathSegments: string[]): { filePath: string; stat: fs.Stats } | null {
-  const decodedSegments = pathSegments.map((s) => {
-    try {
-      return decodeURIComponent(s);
-    } catch {
-      return s;
-    }
-  });
-
-  // Strip redundant leading "uploads" if present
-  const cleanSegments = [...decodedSegments];
-  while (cleanSegments.length > 0 && cleanSegments[0] === "uploads") {
-    cleanSegments.shift();
-  }
-
-  const cwd = process.cwd();
-  const searchDirs = [
-    path.resolve(cwd, "public", "uploads"),
-    path.resolve(cwd, "public"),
-    path.resolve(cwd, "uploads"),
-  ];
-
-  for (const baseDir of searchDirs) {
-    const candidatePath = path.resolve(baseDir, ...cleanSegments);
-    // Security check: path traversal prevention
-    if (candidatePath.startsWith(baseDir) && fs.existsSync(candidatePath)) {
-      try {
-        const stat = fs.statSync(candidatePath);
-        if (stat.isFile()) {
-          return { filePath: candidatePath, stat };
-        }
-      } catch {
-        // continue search
-      }
-    }
-  }
-
-  return null;
-}
-
 const MIME_TYPES: Record<string, string> = {
   ".jpg": "image/jpeg",
   ".jpeg": "image/jpeg",
@@ -62,18 +22,50 @@ const MIME_TYPES: Record<string, string> = {
   ".txt": "text/plain",
 };
 
+function resolveCandidateFile(pathSegments: string[]): { filePath: string; stat: fs.Stats } | null {
+  const decodedSegments = pathSegments.map((s) => {
+    try {
+      return decodeURIComponent(s);
+    } catch {
+      return s;
+    }
+  });
+
+  const cwd = process.cwd();
+  const searchPaths = [
+    path.resolve(cwd, "public", "uploads", "candidates", ...decodedSegments),
+    path.resolve(cwd, "public", "uploads", ...decodedSegments),
+    path.resolve(cwd, "public", "candidates", ...decodedSegments),
+    path.resolve(cwd, "uploads", "candidates", ...decodedSegments),
+  ];
+
+  for (const candidatePath of searchPaths) {
+    if (fs.existsSync(candidatePath)) {
+      try {
+        const stat = fs.statSync(candidatePath);
+        if (stat.isFile()) {
+          return { filePath: candidatePath, stat };
+        }
+      } catch {
+        // continue
+      }
+    }
+  }
+
+  return null;
+}
+
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ path: string[] }> }
 ) {
   try {
     const { path: pathSegments } = await params;
-
     if (!pathSegments || pathSegments.length === 0) {
       return new NextResponse("Not Found", { status: 404 });
     }
 
-    const found = resolveUploadFile(pathSegments);
+    const found = resolveCandidateFile(pathSegments);
     if (!found) {
       return new NextResponse("File Not Found", { status: 404 });
     }
@@ -92,7 +84,7 @@ export async function GET(
       },
     });
   } catch (error) {
-    console.error("Error serving uploaded file:", error);
+    console.error("Error serving candidate file:", error);
     return new NextResponse("Internal Server Error", { status: 500 });
   }
 }
@@ -107,7 +99,7 @@ export async function HEAD(
       return new NextResponse(null, { status: 404 });
     }
 
-    const found = resolveUploadFile(pathSegments);
+    const found = resolveCandidateFile(pathSegments);
     if (!found) {
       return new NextResponse(null, { status: 404 });
     }

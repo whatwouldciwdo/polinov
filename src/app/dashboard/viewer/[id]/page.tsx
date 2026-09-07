@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import DocumentViewer from "@/components/DocumentViewer";
+import { formatFileUrl } from "@/lib/fileUrl";
 
 interface Candidate {
   id: number;
@@ -85,9 +86,7 @@ export default function DocumentViewerPage() {
     );
   }
 
-  const fileUrl = candidate.file.startsWith("http") || candidate.file.startsWith("/") 
-    ? candidate.file 
-    : `/${candidate.file}`;
+  const fileUrl = formatFileUrl(candidate.file);
 
   const isPdf = fileUrl.toLowerCase().endsWith(".pdf");
 

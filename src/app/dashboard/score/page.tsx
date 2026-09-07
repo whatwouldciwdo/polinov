@@ -7,6 +7,7 @@ import Link from "next/link";
 import Toast from "@/components/Toast";
 import DocumentViewer from "@/components/DocumentViewer";
 import { EVALUATION_CRITERIA } from "@/lib/criteria";
+import { formatFileUrl } from "@/lib/fileUrl";
 
 interface MemberItem {
   name: string;
@@ -433,7 +434,7 @@ export default function ScorePage() {
                                 <span>Buka Halaman Penuh</span> &rarr;
                               </Link>
                               <a
-                                href={`/${activeCandidate.file}`}
+                                href={formatFileUrl(activeCandidate.file)}
                                 download
                                 className="hover:text-gray-200 hover:underline"
                               >
@@ -672,7 +673,7 @@ export default function ScorePage() {
             {/* Modal Document Viewer Body */}
             <div className="flex-1 p-2 sm:p-3 bg-[#13141a] overflow-hidden flex flex-col">
               <DocumentViewer
-                fileUrl={`/${activeCandidate.file}`}
+                fileUrl={formatFileUrl(activeCandidate.file)}
                 title={activeCandidate.name}
               />
             </div>
