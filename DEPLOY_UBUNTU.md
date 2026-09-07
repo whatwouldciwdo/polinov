@@ -34,11 +34,16 @@ docker compose version
 
 ---
 
-## 2. Clone Repository
+## 2. Persiapan Direktori & Clone Repository
 
-Clone repository Polinov ke server Ubuntu:
+Buat direktori penampung project di server Ubuntu (misal di `~/app` atau lokasi pilihan Anda), lalu clone repository:
 
 ```bash
+# Buat dan masuk ke direktori kerja
+mkdir -p ~/app
+cd ~/app
+
+# Clone repository Polinov
 git clone https://github.com/whatwouldciwdo/polinov.git
 cd polinov
 ```
