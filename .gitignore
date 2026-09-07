@@ -1,0 +1,46 @@
+# Dependencies
+/node_modules
+/.pnp
+.pnp.js
+
+# Next.js Build Output
+/.next/
+/out/
+/build
+
+# TypeScript
+*.tsbuildinfo
+next-env.d.ts
+
+# Environment Variables
+.env
+.env*.local
+.env.backup
+.env.production
+!.env.example
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# Uploads (ignore user uploaded files, keep directory structure)
+/public/uploads/*
+!/public/uploads/candidates/
+/public/uploads/candidates/*
+!/public/uploads/candidates/.gitkeep
+!/public/uploads/.gitkeep
+
+# IDE & Editor Configs
+.idea
+.vscode
+/.fleet
+/.zed
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+.DS_Store
+Thumbs.db

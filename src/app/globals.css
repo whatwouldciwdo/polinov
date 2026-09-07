@@ -1,0 +1,177 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --neu-base: #1e2029;
+  --neu-dark: #14151b;
+  --neu-light: #282b37;
+  --neu-accent: #8b5cf6;
+  --neu-accent-dark: #6d28d9;
+}
+
+body {
+  background-color: var(--neu-base);
+  color: #f3f4f6;
+  min-height: 100vh;
+}
+
+/* --- NEUMORPHIC PRIMITIVES --- */
+
+/* Flat extruded surface */
+.neu-flat {
+  background: #1e2029;
+  box-shadow: 7px 7px 15px #14151b, -7px -7px 15px #282b37;
+  border-radius: 16px;
+}
+
+/* Pronounced elevated surface for cards */
+.neu-card {
+  background: #1e2029;
+  box-shadow: 9px 9px 18px #13141a, -9px -9px 18px #292c38;
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  border-radius: 20px;
+  transition: all 0.25s ease;
+}
+
+.neu-card:hover {
+  box-shadow: 12px 12px 22px #121318, -12px -12px 22px #2b2e3b;
+  transform: translateY(-2px);
+}
+
+/* Subtle flat card (no hover movement) */
+.neu-panel {
+  background: #1e2029;
+  box-shadow: 8px 8px 16px #14151b, -8px -8px 16px #282b37;
+  border: 1px solid rgba(255, 255, 255, 0.03);
+  border-radius: 18px;
+}
+
+/* Inset / Depressed surface for inputs, wells, selects */
+.neu-inset {
+  background: #1a1c24;
+  box-shadow: inset 4px 4px 8px #131419, inset -4px -4px 8px #252833;
+  border: 1px solid rgba(255, 255, 255, 0.03);
+  border-radius: 14px;
+  transition: all 0.2s ease;
+}
+
+.neu-inset:focus-within,
+.neu-inset:focus {
+  box-shadow: inset 5px 5px 9px #111216, inset -5px -5px 9px #272a36, 0 0 0 1.5px rgba(139, 92, 246, 0.5);
+  outline: none;
+}
+
+/* Convex button (subtle curved extrusion) */
+.neu-btn {
+  background: linear-gradient(145deg, #20222c, #1b1d25);
+  box-shadow: 5px 5px 11px #14151b, -5px -5px 11px #282b37;
+  border-radius: 9999px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  color: #e5e7eb;
+  font-weight: 600;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.neu-btn:hover {
+  background: linear-gradient(145deg, #222530, #1c1e27);
+  box-shadow: 6px 6px 13px #131419, -6px -6px 13px #2a2d39;
+  color: #ffffff;
+}
+
+.neu-btn:active {
+  background: #1a1c24;
+  box-shadow: inset 3px 3px 6px #131419, inset -3px -3px 6px #252833;
+  transform: translateY(1px);
+}
+
+/* Primary Neumorphic Button (Purple glow & gradient) */
+.neu-btn-primary {
+  background: linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%);
+  box-shadow: 5px 5px 12px #14151b, -4px -4px 10px #282b37, 0 0 16px rgba(139, 92, 246, 0.35);
+  border-radius: 9999px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #ffffff;
+  font-weight: 600;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.neu-btn-primary:hover {
+  background: linear-gradient(135deg, #9365f8 0%, #7532df 100%);
+  box-shadow: 6px 6px 15px #131419, -5px -5px 12px #2a2d39, 0 0 22px rgba(139, 92, 246, 0.5);
+  transform: translateY(-1px);
+}
+
+.neu-btn-primary:active {
+  box-shadow: inset 3px 3px 6px rgba(0, 0, 0, 0.5), inset -2px -2px 4px rgba(255, 255, 255, 0.2);
+  transform: translateY(1px);
+}
+
+/* Danger Neumorphic Button */
+.neu-btn-danger {
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  box-shadow: 4px 4px 10px #14151b, -3px -3px 8px #282b37;
+  border-radius: 9999px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #ffffff;
+  font-weight: 600;
+  transition: all 0.2s ease;
+}
+
+.neu-btn-danger:active {
+  box-shadow: inset 3px 3px 5px rgba(0, 0, 0, 0.5);
+  transform: translateY(1px);
+}
+
+/* Neumorphic Circle Icon Well */
+.neu-icon-well {
+  background: #1a1c24;
+  box-shadow: inset 3px 3px 6px #131419, inset -3px -3px 6px #252833;
+  border-radius: 9999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Neumorphic Pill / Badge */
+.neu-pill {
+  background: #1e2029;
+  box-shadow: 3px 3px 7px #14151b, -3px -3px 7px #282b37;
+  border-radius: 9999px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+/* Neumorphic Inset Pill */
+.neu-pill-inset {
+  background: #1a1c24;
+  box-shadow: inset 2px 2px 5px #131419, inset -2px -2px 5px #252833;
+  border-radius: 9999px;
+}
+
+/* Legacy custom-card support upgraded to neumorphic */
+.custom-card {
+  background: #1e2029;
+  box-shadow: 9px 9px 18px #13141a, -9px -9px 18px #292c38;
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  border-radius: 20px;
+  padding: 24px;
+  color: #fff;
+  width: 300px;
+  height: 180px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: flex-start;
+  transition: all 0.25s ease;
+}
+
+.custom-card:hover {
+  box-shadow: 12px 12px 22px #121318, -12px -12px 22px #2b2e3b;
+  transform: translateY(-3px);
+}

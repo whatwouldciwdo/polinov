@@ -1,0 +1,61 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id              Int        @id @default(autoincrement())
+  candidateId     Int?       @map("candidate_id")
+  name            String
+  nip             String?    @unique
+  email           String     @unique
+  emailVerifiedAt DateTime?  @map("email_verified_at")
+  password        String
+  role            String     @default("juri")
+  rememberToken   String?    @map("remember_token")
+  createdAt       DateTime   @default(now()) @map("created_at")
+  updatedAt       DateTime   @updatedAt @map("updated_at")
+
+  candidate       Candidate? @relation(fields: [candidateId], references: [id])
+  scores          Score[]
+
+  @@map("users")
+}
+
+model Candidate {
+  id                Int      @id @default(autoincrement())
+  name              String
+  candidateNip      String   @map("candidate_nip")
+  candidatePosition String   @map("candidate_position")
+  sejak             String?
+  masa              String?
+  file              String?
+  members           Json?
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
+
+  scores            Score[]
+  users             User[]
+
+  @@map("candidates")
+}
+
+model Score {
+  id          Int       @id @default(autoincrement())
+  candidateId Int       @map("candidate_id")
+  score       String
+  details     Json?
+  feedback    String?
+  userId      Int       @map("user_id")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  candidate   Candidate @relation(fields: [candidateId], references: [id])
+  user        User      @relation(fields: [userId], references: [id])
+
+  @@map("scores")
+}
