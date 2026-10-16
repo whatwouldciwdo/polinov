@@ -271,15 +271,11 @@ export default function ScorePage() {
                         </div>
                       </div>
 
-                      {/* Context: Focus & Indicator */}
+                      {/* Context: Yang Dinilai */}
                       <div className="neu-inset p-3.5 rounded-xl text-xs space-y-1.5 font-sans border border-white/5">
                         <div>
-                          <span className="text-gray-400 font-semibold">Fokus Penilaian: </span>
+                          <span className="text-gray-400 font-semibold">Yang Dinilai: </span>
                           <span className="text-gray-300">{criterion.focus}</span>
-                        </div>
-                        <div>
-                          <span className="text-gray-400 font-semibold">Indikator: </span>
-                          <span className="text-gray-300">{criterion.indicator}</span>
                         </div>
                       </div>
 

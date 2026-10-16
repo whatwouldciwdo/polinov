@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { EVALUATION_CRITERIA } from "@/lib/criteria";
 
 export async function POST(req: NextRequest) {
   const session = await getServerSession(authOptions);
@@ -36,15 +37,9 @@ export async function POST(req: NextRequest) {
     }
   } else if (body.criteria_scores && typeof body.criteria_scores === "object") {
     // Or object with weights: { "1": 80, "2": 100, ... }
-    const weights: Record<string, number> = {
-      "1": 0.10,
-      "2": 0.20,
-      "3": 0.20,
-      "4": 0.20,
-      "5": 0.15,
-      "6": 0.05,
-      "7": 0.10,
-    };
+    const weights: Record<string, number> = Object.fromEntries(
+      EVALUATION_CRITERIA.map((c) => [String(c.id), c.weight])
+    );
     for (const [key, val] of Object.entries(body.criteria_scores)) {
       const weight = weights[key] ?? 0;
       totalScore += parseFloat(val as string || "0") * weight;

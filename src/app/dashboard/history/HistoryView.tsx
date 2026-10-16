@@ -407,7 +407,7 @@ export default function HistoryView({ evaluatorName, evaluatorNip, items }: Prop
             <div className="space-y-3">
               <div className="flex items-center justify-between">
                 <h3 className="text-xs font-bold text-gray-300 uppercase tracking-wider">
-                  Rincian Penilaian 7 Kriteria Bobot Excel
+                  Rincian Penilaian 7 Kriteria Standar POLINOV
                 </h3>
                 <span className="neu-pill-inset px-2.5 py-0.5 text-[11px] text-purple-400 font-mono">
                   Total Bobot 100%
