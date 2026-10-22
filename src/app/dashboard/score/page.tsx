@@ -21,6 +21,7 @@ interface Candidate {
   name: string;
   file?: string | null;
   members?: MemberItem[] | string | null;
+  isEvaluated?: boolean;
 }
 
 export default function ScorePage() {
@@ -72,6 +73,35 @@ export default function ScorePage() {
     return [];
   }, [activeCandidate]);
 
+  const resetScoresAndForm = () => {
+    setSelectedScores({
+      1: "",
+      2: "",
+      3: "",
+      4: "",
+      5: "",
+      6: "",
+      7: "",
+    });
+    setFeedback("");
+    setError("");
+  };
+
+  const handleCandidateChange = (newCandidateId: string) => {
+    if (!newCandidateId) {
+      setSelectedCandidate("");
+      resetScoresAndForm();
+      return;
+    }
+    const candidateObj = candidates.find((c) => String(c.id) === String(newCandidateId));
+    if (candidateObj?.isEvaluated) {
+      setError("Judul makalah inovasi ini sudah pernah Anda nilai. Setiap penilai hanya dapat menilai 1 kali per judul.");
+      return;
+    }
+    setSelectedCandidate(newCandidateId);
+    resetScoresAndForm();
+  };
+
   const handleScoreChange = (criterionId: number, value: string) => {
     setSelectedScores((prev) => ({
       ...prev,
@@ -102,6 +132,11 @@ export default function ScorePage() {
 
     if (!selectedCandidate) {
       setError("Silakan pilih judul makalah inovasi terlebih dahulu.");
+      return;
+    }
+
+    if (activeCandidate?.isEvaluated) {
+      setError("Judul makalah inovasi ini sudah pernah Anda nilai. Setiap penilai hanya dapat menilai 1 kali per judul.");
       return;
     }
 
@@ -201,7 +236,7 @@ export default function ScorePage() {
                   <select
                     name="candidate_id"
                     value={selectedCandidate}
-                    onChange={(e) => setSelectedCandidate(e.target.value)}
+                    onChange={(e) => handleCandidateChange(e.target.value)}
                     className="w-full p-2.5 bg-transparent text-gray-200 focus:outline-none rounded-xl text-sm cursor-pointer"
                     required
                   >
@@ -209,12 +244,33 @@ export default function ScorePage() {
                       -- Pilih Judul Makalah Inovasi --
                     </option>
                     {candidates.map((cd) => (
-                      <option key={cd.id} value={cd.id} className="bg-[#1a1c24] text-gray-200">
-                        {cd.name}
+                      <option
+                        key={cd.id}
+                        value={cd.id}
+                        disabled={cd.isEvaluated}
+                        className={
+                          cd.isEvaluated
+                            ? "bg-[#14151b] text-gray-500 italic"
+                            : "bg-[#1a1c24] text-gray-200"
+                        }
+                      >
+                        {cd.name} {cd.isEvaluated ? "— [Sudah Dinilai]" : ""}
                       </option>
                     ))}
                   </select>
                 </div>
+
+                {candidates.length > 0 && candidates.every((cd) => cd.isEvaluated) && (
+                  <div className="p-3.5 mt-2 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs flex flex-col sm:flex-row items-center justify-between gap-2">
+                    <span>Semua judul makalah inovasi telah selesai Anda nilai.</span>
+                    <Link
+                      href="/dashboard/history"
+                      className="underline font-bold hover:text-emerald-300 shrink-0"
+                    >
+                      Buka Riwayat Penilaian &rarr;
+                    </Link>
+                  </div>
+                )}
               </div>
 
               {/* Realtime Live Score Preview Banner */}

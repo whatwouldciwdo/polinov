@@ -20,10 +20,17 @@ export async function POST(req: NextRequest) {
   const userId = parseInt(session.user.id);
   const candidateId = parseInt(candidate_id);
 
-  // Check if already scored
+  // Check if already scored (1 user can only score 1 candidate once)
   const existingScore = await prisma.score.findFirst({
     where: { userId, candidateId },
   });
+
+  if (existingScore) {
+    return NextResponse.json(
+      { error: "Anda sudah pernah memberikan penilaian untuk judul inovasi ini. Setiap penilai hanya dapat menilai 1 kali per judul." },
+      { status: 400 }
+    );
+  }
 
   // Calculate total score based on new criteria or legacy format
   let totalScore = 0;
@@ -66,30 +73,16 @@ export async function POST(req: NextRequest) {
   // Format to 2 decimal places if needed
   totalScore = Math.round(totalScore * 100) / 100;
 
-  let scoreId: number;
-
-  if (existingScore) {
-    // Update existing score record with updated breakdown & feedback
-    await (prisma as any).$executeRawUnsafe(
-      "UPDATE scores SET score = $1, details = $2::jsonb, feedback = $3, updated_at = NOW() WHERE id = $4",
-      String(totalScore),
-      JSON.stringify(body.scores || null),
-      body.feedback ? String(body.feedback).trim() : null,
-      existingScore.id
-    );
-    scoreId = existingScore.id;
-  } else {
-    // Insert new score record
-    const result: any = await (prisma as any).$queryRawUnsafe(
-      "INSERT INTO scores (candidate_id, score, details, feedback, user_id, created_at, updated_at) VALUES ($1, $2, $3::jsonb, $4, $5, NOW(), NOW()) RETURNING id",
-      candidateId,
-      String(totalScore),
-      JSON.stringify(body.scores || null),
-      body.feedback ? String(body.feedback).trim() : null,
-      userId
-    );
-    scoreId = result[0]?.id;
-  }
+  // Insert new score record
+  const result: any = await (prisma as any).$queryRawUnsafe(
+    "INSERT INTO scores (candidate_id, score, details, feedback, user_id, created_at, updated_at) VALUES ($1, $2, $3::jsonb, $4, $5, NOW(), NOW()) RETURNING id",
+    candidateId,
+    String(totalScore),
+    JSON.stringify(body.scores || null),
+    body.feedback ? String(body.feedback).trim() : null,
+    userId
+  );
+  const scoreId = result[0]?.id;
 
   return NextResponse.json({ id: scoreId });
 }
