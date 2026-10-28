@@ -6,6 +6,7 @@ import Link from "next/link";
 export interface AuditLogItem {
   id: number;
   score: string;
+  feedback?: string | null;
   createdAt: string;
   user: {
     id: number;
@@ -55,12 +56,28 @@ export default function AuditLogsView({
   const [selectedJudge, setSelectedJudge] = useState("");
   const [matrixFilter, setMatrixFilter] = useState<"all" | "completed" | "in_progress" | "not_started">("all");
 
-  // Lookup map: `${judgeId}-${candidateId}` -> { score, createdAt, id }
+  // Feedback list filters in Tab 1
+  const [feedbackCandidateFilter, setFeedbackCandidateFilter] = useState("");
+  const [feedbackJudgeFilter, setFeedbackJudgeFilter] = useState("");
+  const [feedbackOnlyHasText, setFeedbackOnlyHasText] = useState(true);
+
+  // Modal detail popup for a specific score and its feedback
+  const [selectedFeedbackModal, setSelectedFeedbackModal] = useState<{
+    judgeName: string;
+    judgeNip?: string | null;
+    candidateName: string;
+    score: string;
+    feedback?: string | null;
+    createdAt?: string | null;
+  } | null>(null);
+
+  // Lookup map: `${judgeId}-${candidateId}` -> { score, feedback, createdAt, id }
   const scoreMap = useMemo(() => {
-    const map = new Map<string, { score: string; createdAt: string; id: number }>();
+    const map = new Map<string, { score: string; feedback?: string | null; createdAt: string; id: number }>();
     for (const log of initialLogs) {
       map.set(`${log.user.id}-${log.candidate.id}`, {
         score: log.score,
+        feedback: log.feedback,
         createdAt: log.createdAt,
         id: log.id,
       });
@@ -76,6 +93,11 @@ export default function AuditLogsView({
   // Unique candidates that have been evaluated by at least one judge
   const uniqueEvaluatedCandidatesCount = useMemo(() => {
     return new Set(initialLogs.map((l) => l.candidate.id)).size;
+  }, [initialLogs]);
+
+  // Count of logs containing feedback text
+  const feedbackCount = useMemo(() => {
+    return initialLogs.filter((l) => l.feedback && l.feedback.trim().length > 0).length;
   }, [initialLogs]);
 
   // Overall average score
@@ -100,6 +122,7 @@ export default function AuditLogsView({
             candidateId: candidate.id,
             candidateName: candidate.name,
             score: item.score,
+            feedback: item.feedback ?? null,
             createdAt: item.createdAt,
             evaluated: true,
           };
@@ -108,6 +131,7 @@ export default function AuditLogsView({
           candidateId: candidate.id,
           candidateName: candidate.name,
           score: null,
+          feedback: null,
           createdAt: null,
           evaluated: false,
         };
@@ -150,13 +174,28 @@ export default function AuditLogsView({
     });
   }, [judgeMatrixStats, search, matrixFilter]);
 
+  // Filtered feedbacks for Tab 1 feedback section
+  const filteredFeedbacks = useMemo(() => {
+    return initialLogs.filter((log) => {
+      const matchCandidate =
+        feedbackCandidateFilter === "" || log.candidate.id.toString() === feedbackCandidateFilter;
+      const matchJudge =
+        feedbackJudgeFilter === "" || log.user.id.toString() === feedbackJudgeFilter;
+      const matchHasText =
+        !feedbackOnlyHasText || (Boolean(log.feedback) && log.feedback!.trim().length > 0);
+
+      return matchCandidate && matchJudge && matchHasText;
+    });
+  }, [initialLogs, feedbackCandidateFilter, feedbackJudgeFilter, feedbackOnlyHasText]);
+
   // Filtered Logs for Tab 2
   const filteredLogs = useMemo(() => {
     return initialLogs.filter((log) => {
       const matchesSearch =
         log.user.name.toLowerCase().includes(search.toLowerCase()) ||
         (log.user.nip && log.user.nip.includes(search)) ||
-        log.candidate.name.toLowerCase().includes(search.toLowerCase());
+        log.candidate.name.toLowerCase().includes(search.toLowerCase()) ||
+        (log.feedback && log.feedback.toLowerCase().includes(search.toLowerCase()));
 
       const matchesJudge =
         selectedJudge === "" || log.user.id.toString() === selectedJudge;
@@ -202,11 +241,21 @@ export default function AuditLogsView({
     document.body.removeChild(link);
   };
 
-  // Export Logs to CSV
+  // Export Logs to CSV (including feedback column)
   const handleExportLogsCSV = () => {
     if (filteredLogs.length === 0) return;
 
-    const headers = ["ID", "Waktu Audit (WIB)", "Nama Juri", "NIP Juri", "Email Juri", "Judul Inovasi", "Skor Total"];
+    const headers = [
+      "ID",
+      "Waktu Audit (WIB)",
+      "Nama Juri",
+      "NIP Juri",
+      "Email Juri",
+      "Judul Inovasi",
+      "Skor Total",
+      "Feedback / Catatan Evaluasi Juri",
+    ];
+
     const rows = filteredLogs.map((log) => [
       log.id,
       new Date(log.createdAt).toLocaleString("id-ID", {
@@ -219,6 +268,7 @@ export default function AuditLogsView({
       log.user.email,
       `"${log.candidate.name.replace(/"/g, '""')}"`,
       log.score,
+      `"${(log.feedback || "").replace(/"/g, '""')}"`,
     ]);
 
     const csvContent = "data:text/csv;charset=utf-8,\uFEFF" + [headers.join(","), ...rows.map((e) => e.join(","))].join("\n");
@@ -226,6 +276,50 @@ export default function AuditLogsView({
     const link = document.createElement("a");
     link.setAttribute("href", encodedUri);
     link.setAttribute("download", `log-penilaian-polinov-2026_${new Date().toISOString().slice(0, 10)}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  // Dedicated Export for Feedback / Evaluation notes
+  const handleExportFeedbackCSV = () => {
+    const dataToExport = initialLogs.filter((l) => l.feedback && l.feedback.trim().length > 0);
+    if (dataToExport.length === 0) return;
+
+    const headers = [
+      "No",
+      "Makalah Inovasi",
+      "Nama Juri",
+      "NIP Juri",
+      "Total Skor",
+      "Waktu Penilaian",
+      "Feedback / Catatan Evaluasi Juri",
+    ];
+
+    const rows = dataToExport.map((log, idx) => [
+      idx + 1,
+      `"${log.candidate.name.replace(/"/g, '""')}"`,
+      `"${log.user.name.replace(/"/g, '""')}"`,
+      log.user.nip || "-",
+      log.score,
+      new Date(log.createdAt).toLocaleString("id-ID", {
+        timeZone: "Asia/Jakarta",
+        dateStyle: "medium",
+        timeStyle: "short",
+      }),
+      `"${(log.feedback || "").replace(/"/g, '""')}"`,
+    ]);
+
+    const csvContent =
+      "data:text/csv;charset=utf-8,\uFEFF" +
+      [headers.join(","), ...rows.map((e) => e.join(","))].join("\n");
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute(
+      "download",
+      `feedback-evaluasi-juri-polinov-2026_${new Date().toISOString().slice(0, 10)}.csv`
+    );
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -259,7 +353,7 @@ export default function AuditLogsView({
               </h1>
             </div>
             <p className="text-xs text-gray-400 mt-1 font-sans">
-              Pantau progres kelengkapan penilaian setiap juri dan rekam jejak transparansi POLINOV 2026.
+              Pantau progres kelengkapan penilaian setiap juri, rekam jejak transparansi, serta masukan/feedback evaluasi juri POLINOV 2026.
             </p>
           </div>
 
@@ -313,7 +407,9 @@ export default function AuditLogsView({
             </span>
             <div className="mt-2 flex items-baseline gap-1.5">
               <span className="text-2xl font-bold text-white font-mono">{initialLogs.length}</span>
-              <span className="text-xs text-gray-400 font-sans">skor</span>
+              <span className="text-xs text-gray-400 font-sans">
+                skor <span className="text-purple-400 font-medium">({feedbackCount} ada catatan)</span>
+              </span>
             </div>
           </div>
 
@@ -538,7 +634,7 @@ export default function AuditLogsView({
                     Tabel Matriks Penilaian Inovasi
                   </h3>
                   <p className="text-xs text-gray-400">
-                    Hijau menunjukkan judul sudah dinilai juri beserta skornya, abu-abu menunjukkan belum dinilai.
+                    Klik skor bertanda <span className="text-purple-400 font-semibold">💬</span> untuk membuka feedback/catatan evaluasi juri.
                   </p>
                 </div>
                 <span className="neu-pill-inset px-3 py-1 text-[11px] font-mono text-purple-400 font-semibold self-start sm:self-auto">
@@ -617,12 +713,34 @@ export default function AuditLogsView({
                           {item.candidateScores.map((cs) => (
                             <td key={cs.candidateId} className="p-3 text-center">
                               {cs.evaluated ? (
-                                <span
-                                  className="neu-pill px-2.5 py-1 text-[11px] font-bold text-emerald-300 font-mono border border-emerald-500/30 inline-block hover:scale-105 transition-transform cursor-default"
-                                  title={`Dinilai: ${cs.score} (${cs.candidateName})`}
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    setSelectedFeedbackModal({
+                                      judgeName: item.judge.name,
+                                      judgeNip: item.judge.nip,
+                                      candidateName: cs.candidateName,
+                                      score: cs.score || "",
+                                      feedback: cs.feedback,
+                                      createdAt: cs.createdAt,
+                                    })
+                                  }
+                                  className={`neu-pill px-2 py-1 text-[11px] font-bold font-mono border transition-all cursor-pointer inline-flex items-center gap-1 hover:scale-105 ${
+                                    cs.feedback && cs.feedback.trim()
+                                      ? "text-emerald-300 border-emerald-500/40 bg-emerald-500/10 hover:border-purple-400 hover:text-white"
+                                      : "text-emerald-300 border-emerald-500/20 hover:border-emerald-400"
+                                  }`}
+                                  title={
+                                    cs.feedback && cs.feedback.trim()
+                                      ? `Skor: ${cs.score} (Ada catatan feedback juri - klik untuk membaca)`
+                                      : `Skor: ${cs.score} (Klik untuk detail)`
+                                  }
                                 >
-                                  {cs.score}
-                                </span>
+                                  <span>{cs.score}</span>
+                                  {cs.feedback && cs.feedback.trim() && (
+                                    <span className="text-purple-400 text-[10px]" title="Ada catatan evaluasi">💬</span>
+                                  )}
+                                </button>
                               ) : (
                                 <span
                                   className="text-[11px] text-gray-600 font-mono italic"
@@ -661,6 +779,177 @@ export default function AuditLogsView({
 
             </div>
 
+            {/* ======================================================== */}
+            {/* SECTION: KUMPULAN FEEDBACK & CATATAN EVALUASI JURI       */}
+            {/* ======================================================== */}
+            <div className="neu-card p-5 border border-white/5 space-y-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-white/5">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="neu-icon-well w-7 h-7 text-purple-400 flex items-center justify-center font-bold text-xs">
+                      💬
+                    </span>
+                    <h3 className="text-sm font-bold text-white tracking-wide">
+                      Feedback / Catatan Evaluasi Juri
+                    </h3>
+                  </div>
+                  <p className="text-xs text-gray-400 mt-1 font-sans">
+                    Catatan masukan, apresiasi, atau saran penyempurnaan karya inovasi bagi peserta yang ditulis oleh dewan juri.
+                  </p>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={handleExportFeedbackCSV}
+                    disabled={feedbackCount === 0}
+                    className="neu-btn px-3 py-1.5 text-xs font-bold text-purple-400 hover:text-white flex items-center gap-1.5 disabled:opacity-50"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                      <polyline points="7 10 12 15 17 10"></polyline>
+                      <line x1="12" y1="15" x2="12" y2="3"></line>
+                    </svg>
+                    <span>Ekspor Catatan CSV ({feedbackCount})</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Filter Controls for Feedback */}
+              <div className="flex flex-col sm:flex-row gap-3 items-center">
+                {/* Filter by Candidate */}
+                <div className="w-full sm:flex-1 neu-inset p-1">
+                  <select
+                    value={feedbackCandidateFilter}
+                    onChange={(e) => setFeedbackCandidateFilter(e.target.value)}
+                    className="w-full p-2 bg-transparent text-xs text-gray-200 focus:outline-none rounded-xl cursor-pointer"
+                  >
+                    <option value="" className="bg-[#1a1c24] text-gray-400">
+                      Semua Makalah Inovasi ({allCandidates.length})
+                    </option>
+                    {allCandidates.map((c, i) => (
+                      <option key={c.id} value={c.id.toString()} className="bg-[#1a1c24] text-gray-200">
+                        #{i + 1} - {c.name.length > 55 ? `${c.name.slice(0, 55)}...` : c.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Filter by Judge */}
+                <div className="w-full sm:w-60 neu-inset p-1">
+                  <select
+                    value={feedbackJudgeFilter}
+                    onChange={(e) => setFeedbackJudgeFilter(e.target.value)}
+                    className="w-full p-2 bg-transparent text-xs text-gray-200 focus:outline-none rounded-xl cursor-pointer"
+                  >
+                    <option value="" className="bg-[#1a1c24] text-gray-400">
+                      Semua Juri ({allJudges.length})
+                    </option>
+                    {allJudges.map((j) => (
+                      <option key={j.id} value={j.id.toString()} className="bg-[#1a1c24] text-gray-200">
+                        {j.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Toggle: Only show entries with text */}
+                <label className="flex items-center gap-2 cursor-pointer text-xs text-gray-400 select-none whitespace-nowrap self-start sm:self-auto py-1">
+                  <input
+                    type="checkbox"
+                    checked={feedbackOnlyHasText}
+                    onChange={(e) => setFeedbackOnlyHasText(e.target.checked)}
+                    className="rounded text-purple-600 focus:ring-0 bg-transparent"
+                  />
+                  <span>Hanya yang memiliki catatan ({feedbackCount})</span>
+                </label>
+              </div>
+
+              {/* Feedback Cards Grid */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5 pt-2">
+                {filteredFeedbacks.length === 0 ? (
+                  <div className="col-span-full neu-inset p-8 rounded-xl text-center text-xs text-gray-400 italic">
+                    Tidak ada catatan feedback juri yang sesuai dengan filter pencarian.
+                  </div>
+                ) : (
+                  filteredFeedbacks.map((item) => (
+                    <div
+                      key={item.id}
+                      className="neu-card p-4 border border-white/5 space-y-3 hover:border-purple-500/20 transition-all flex flex-col justify-between"
+                    >
+                      <div className="space-y-2.5">
+                        {/* Header: Candidate title + Score */}
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="min-w-0">
+                            <span className="neu-pill-inset px-2.5 py-1 text-[11px] font-bold text-purple-300 font-sans block truncate" title={item.candidate.name}>
+                              {item.candidate.name}
+                            </span>
+                          </div>
+                          <div className="neu-pill px-2.5 py-0.5 text-xs font-bold text-emerald-300 font-mono shrink-0 border border-emerald-500/30">
+                            Skor: {item.score}
+                          </div>
+                        </div>
+
+                        {/* Judge info & timestamp */}
+                        <div className="flex items-center justify-between text-xs pt-1.5 border-t border-white/5">
+                          <div className="flex items-center gap-2 min-w-0">
+                            <div className="w-6 h-6 rounded-lg neu-panel flex items-center justify-center text-[10px] font-bold text-purple-400 shrink-0">
+                              {item.user.name.charAt(0).toUpperCase()}
+                            </div>
+                            <div className="min-w-0">
+                              <span className="font-semibold text-white truncate block">{item.user.name}</span>
+                              <span className="text-[10px] text-gray-400 font-mono">NIP: {item.user.nip || "-"}</span>
+                            </div>
+                          </div>
+                          <div className="text-[10px] text-gray-400 font-mono shrink-0">
+                            {new Date(item.createdAt).toLocaleString("id-ID", {
+                              timeZone: "Asia/Jakarta",
+                              dateStyle: "short",
+                              timeStyle: "short",
+                            })} WIB
+                          </div>
+                        </div>
+
+                        {/* The feedback message */}
+                        <div className="neu-inset p-3.5 rounded-xl border border-purple-500/10">
+                          {item.feedback && item.feedback.trim() ? (
+                            <p className="text-xs text-gray-200 whitespace-pre-line leading-relaxed font-sans">
+                              &ldquo;{item.feedback}&rdquo;
+                            </p>
+                          ) : (
+                            <p className="text-xs text-gray-500 italic font-sans">
+                              (Tidak ada catatan evaluasi dari juri)
+                            </p>
+                          )}
+                        </div>
+                      </div>
+
+                      {item.feedback && item.feedback.trim() && (
+                        <div className="pt-2 flex justify-end">
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setSelectedFeedbackModal({
+                                judgeName: item.user.name,
+                                judgeNip: item.user.nip,
+                                candidateName: item.candidate.name,
+                                score: item.score,
+                                feedback: item.feedback,
+                                createdAt: item.createdAt,
+                              })
+                            }
+                            className="text-[11px] text-purple-400 hover:text-purple-300 hover:underline flex items-center gap-1 font-semibold"
+                          >
+                            <span>Perbesar Catatan &rarr;</span>
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+
           </div>
         )}
 
@@ -681,7 +970,7 @@ export default function AuditLogsView({
                   type="text"
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
-                  placeholder="Cari berdasarkan nama juri, NIP, atau judul inovasi..."
+                  placeholder="Cari berdasarkan nama juri, NIP, judul inovasi, atau isi feedback..."
                   className="w-full p-2.5 bg-transparent text-sm text-gray-100 placeholder-gray-500 focus:outline-none"
                 />
               </div>
@@ -706,25 +995,28 @@ export default function AuditLogsView({
 
             {/* Audit Logs Table */}
             <div className="neu-inset p-3 rounded-2xl overflow-x-auto border border-white/5">
-              <table className="w-full text-left border-collapse">
+              <table className="w-full text-left border-collapse min-w-[950px]">
                 <thead>
                   <tr className="border-b border-white/5">
                     <th className="p-3 text-xs font-bold text-purple-400 uppercase tracking-wider text-center w-12">
                       No
                     </th>
-                    <th className="p-3 text-xs font-bold text-purple-400 uppercase tracking-wider w-44">
+                    <th className="p-3 text-xs font-bold text-purple-400 uppercase tracking-wider w-40">
                       Waktu Penilaian
                     </th>
-                    <th className="p-3 text-xs font-bold text-purple-400 uppercase tracking-wider w-56">
+                    <th className="p-3 text-xs font-bold text-purple-400 uppercase tracking-wider w-48">
                       Juri Penilai
                     </th>
-                    <th className="p-3 text-xs font-bold text-purple-400 uppercase tracking-wider">
+                    <th className="p-3 text-xs font-bold text-purple-400 uppercase tracking-wider w-64">
                       Makalah Inovasi
                     </th>
-                    <th className="p-3 text-xs font-bold text-purple-400 uppercase tracking-wider text-center w-28">
+                    <th className="p-3 text-xs font-bold text-purple-400 uppercase tracking-wider">
+                      Feedback / Catatan Juri
+                    </th>
+                    <th className="p-3 text-xs font-bold text-purple-400 uppercase tracking-wider text-center w-24">
                       Skor Total
                     </th>
-                    <th className="p-3 text-xs font-bold text-purple-400 uppercase tracking-wider text-center w-28">
+                    <th className="p-3 text-xs font-bold text-purple-400 uppercase tracking-wider text-center w-24">
                       Status
                     </th>
                   </tr>
@@ -732,7 +1024,7 @@ export default function AuditLogsView({
                 <tbody className="divide-y divide-white/5">
                   {filteredLogs.length === 0 ? (
                     <tr>
-                      <td colSpan={6} className="p-8 text-center text-gray-400 text-sm">
+                      <td colSpan={7} className="p-8 text-center text-gray-400 text-sm">
                         {initialLogs.length === 0
                           ? "Belum ada riwayat penilaian juri yang tercatat di database."
                           : "Tidak ada data log yang cocok dengan pencarian / filter Anda."}
@@ -749,6 +1041,8 @@ export default function AuditLogsView({
                         minute: "2-digit",
                       });
 
+                      const hasFeedback = Boolean(log.feedback && log.feedback.trim());
+
                       return (
                         <tr key={log.id} className="hover:bg-white/[0.02] transition-colors">
                           <td className="p-3 text-center text-xs font-mono text-gray-400">
@@ -756,7 +1050,7 @@ export default function AuditLogsView({
                           </td>
                           <td className="p-3">
                             <div className="text-xs font-mono text-gray-300 font-semibold flex items-center gap-1.5">
-                              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-purple-400">
+                              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-purple-400 shrink-0">
                                 <circle cx="12" cy="12" r="10"></circle>
                                 <polyline points="12 6 12 12 16 14"></polyline>
                               </svg>
@@ -770,13 +1064,51 @@ export default function AuditLogsView({
                             </div>
                           </td>
                           <td className="p-3">
-                            <div className="text-sm font-medium text-gray-200">{log.candidate.name}</div>
+                            <div className="text-sm font-medium text-gray-200 line-clamp-2" title={log.candidate.name}>
+                              {log.candidate.name}
+                            </div>
                             {log.candidate.candidatePosition && (
-                              <div className="text-xs text-gray-400 font-sans mt-0.5">
+                              <div className="text-xs text-gray-400 font-sans mt-0.5 truncate" title={log.candidate.candidatePosition}>
                                 {log.candidate.candidatePosition}
                               </div>
                             )}
                           </td>
+                          
+                          {/* Feedback / Catatan Evaluasi Juri column */}
+                          <td className="p-3">
+                            {hasFeedback ? (
+                              <div
+                                onClick={() =>
+                                  setSelectedFeedbackModal({
+                                    judgeName: log.user.name,
+                                    judgeNip: log.user.nip,
+                                    candidateName: log.candidate.name,
+                                    score: log.score,
+                                    feedback: log.feedback,
+                                    createdAt: log.createdAt,
+                                  })
+                                }
+                                className="neu-pill-inset p-2.5 rounded-xl border border-purple-500/20 text-xs text-gray-200 hover:border-purple-400 hover:bg-white/[0.02] transition-all cursor-pointer group max-w-sm"
+                                title="Klik untuk membuka catatan lengkap"
+                              >
+                                <div className="flex items-center gap-1.5 text-[10px] font-bold text-purple-400 mb-1 uppercase tracking-wider">
+                                  <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                                  </svg>
+                                  <span>Catatan Juri:</span>
+                                </div>
+                                <p className="line-clamp-2 text-gray-300 font-sans italic group-hover:text-white transition-colors">
+                                  &ldquo;{log.feedback}&rdquo;
+                                </p>
+                                <div className="text-[10px] text-purple-400/80 group-hover:text-purple-300 mt-1 flex items-center gap-1 font-semibold">
+                                  <span>Buka catatan lengkap &rarr;</span>
+                                </div>
+                              </div>
+                            ) : (
+                              <span className="text-gray-600 text-xs italic font-sans">- Tidak ada catatan -</span>
+                            )}
+                          </td>
+
                           <td className="p-3 text-center">
                             <span className="neu-pill px-3 py-1 text-sm font-bold text-purple-400 font-mono">
                               {log.score}
@@ -805,6 +1137,117 @@ export default function AuditLogsView({
         )}
 
       </div>
+
+      {/* ======================================================== */}
+      {/* POPUP MODAL: DETAIL FEEDBACK & CATATAN EVALUASI JURI     */}
+      {/* ======================================================== */}
+      {selectedFeedbackModal && (
+        <div 
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm animate-fade-in"
+          onClick={() => setSelectedFeedbackModal(null)}
+        >
+          <div
+            className="neu-panel w-full max-w-xl p-6 border border-white/10 rounded-2xl shadow-2xl space-y-5 animate-scale-up"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div className="flex items-start justify-between gap-3 pb-3 border-b border-white/10">
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="neu-icon-well w-8 h-8 text-purple-400 flex items-center justify-center font-bold text-sm">
+                    💬
+                  </span>
+                  <h3 className="text-base font-bold text-white tracking-wide">
+                    Feedback / Catatan Evaluasi Juri
+                  </h3>
+                </div>
+                <p className="text-xs text-gray-400 mt-1 font-sans">
+                  Detail masukan, apresiasi, atau rekomendasi dewan juri bagi karya inovasi ini.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setSelectedFeedbackModal(null)}
+                className="neu-btn p-1.5 rounded-lg text-gray-400 hover:text-white"
+                title="Tutup dialog"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="18" y1="6" x2="6" y2="18"></line>
+                  <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+              </button>
+            </div>
+
+            {/* Score & Candidate Details */}
+            <div className="grid grid-cols-2 gap-3 text-xs neu-inset p-3.5 rounded-xl border border-white/5">
+              <div>
+                <span className="text-gray-400 block text-[10px] uppercase font-bold tracking-wider">Juri Penilai</span>
+                <span className="text-white font-semibold text-sm">{selectedFeedbackModal.judgeName}</span>
+                {selectedFeedbackModal.judgeNip && (
+                  <span className="text-gray-400 block text-[11px] font-mono">NIP: {selectedFeedbackModal.judgeNip}</span>
+                )}
+              </div>
+              <div>
+                <span className="text-gray-400 block text-[10px] uppercase font-bold tracking-wider">Total Skor Diberikan</span>
+                <div className="flex items-baseline gap-1 mt-0.5">
+                  <span className="text-xl font-bold text-purple-400 font-mono">{selectedFeedbackModal.score}</span>
+                  <span className="text-xs text-gray-400 font-sans">/ 100</span>
+                </div>
+              </div>
+              <div className="col-span-2 pt-2 border-t border-white/5">
+                <span className="text-gray-400 block text-[10px] uppercase font-bold tracking-wider">Makalah Inovasi</span>
+                <span className="text-gray-200 font-medium text-xs leading-snug">{selectedFeedbackModal.candidateName}</span>
+              </div>
+              {selectedFeedbackModal.createdAt && (
+                <div className="col-span-2 text-[11px] text-gray-400 font-mono">
+                  Waktu Penilaian: {new Date(selectedFeedbackModal.createdAt).toLocaleString("id-ID", {
+                    timeZone: "Asia/Jakarta",
+                    dateStyle: "long",
+                    timeStyle: "short",
+                  })} WIB
+                </div>
+              )}
+            </div>
+
+            {/* Feedback Content */}
+            <div className="space-y-2">
+              <label className="text-xs font-bold text-purple-400 uppercase tracking-wider flex items-center gap-1.5">
+                <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                  <polyline points="14 2 14 8 20 8"></polyline>
+                  <line x1="16" y1="13" x2="8" y2="13"></line>
+                  <line x1="16" y1="17" x2="8" y2="17"></line>
+                  <polyline points="10 9 9 9 8 9"></polyline>
+                </svg>
+                <span>Catatan Masukan, Apresiasi, atau Saran:</span>
+              </label>
+
+              {selectedFeedbackModal.feedback && selectedFeedbackModal.feedback.trim() ? (
+                <div className="neu-inset p-4 rounded-xl border border-purple-500/20 max-h-64 overflow-y-auto">
+                  <p className="text-sm text-gray-100 whitespace-pre-line leading-relaxed font-sans">
+                    {selectedFeedbackModal.feedback}
+                  </p>
+                </div>
+              ) : (
+                <div className="neu-inset p-4 rounded-xl border border-white/5 text-center text-xs text-gray-400 italic font-sans">
+                  Juri ini tidak menyertakan catatan evaluasi tambahan untuk inovasi ini.
+                </div>
+              )}
+            </div>
+
+            {/* Modal Footer */}
+            <div className="flex justify-end pt-2 border-t border-white/5">
+              <button
+                type="button"
+                onClick={() => setSelectedFeedbackModal(null)}
+                className="neu-btn px-5 py-2 text-xs font-bold text-gray-300 hover:text-white"
+              >
+                Tutup
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }

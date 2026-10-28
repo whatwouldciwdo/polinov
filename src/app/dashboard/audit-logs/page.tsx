@@ -54,6 +54,7 @@ export default async function AdminAuditLogsPage() {
   const formattedLogs: AuditLogItem[] = scores.map((s) => ({
     id: s.id,
     score: s.score,
+    feedback: s.feedback,
     createdAt: s.createdAt.toISOString(),
     user: s.user,
     candidate: s.candidate,
