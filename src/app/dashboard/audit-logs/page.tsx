@@ -1,10 +1,10 @@
 import { prisma } from "@/lib/prisma";
-import AuditLogsView, { AuditLogItem } from "./AuditLogsView";
+import AuditLogsView, { AuditLogItem, JudgeItem, CandidateItem } from "./AuditLogsView";
 
 export const dynamic = "force-dynamic";
 
 export default async function AdminAuditLogsPage() {
-  const [scores, totalCandidatesCount] = await Promise.all([
+  const [scores, candidates, judges] = await Promise.all([
     prisma.score.findMany({
       include: {
         user: {
@@ -27,7 +27,28 @@ export default async function AdminAuditLogsPage() {
       },
       orderBy: { createdAt: "desc" },
     }),
-    prisma.candidate.count(),
+    prisma.candidate.findMany({
+      select: {
+        id: true,
+        name: true,
+        candidateNip: true,
+        candidatePosition: true,
+      },
+      orderBy: { id: "asc" },
+    }),
+    prisma.user.findMany({
+      where: {
+        OR: [{ role: "juri" }, { scores: { some: {} } }],
+      },
+      select: {
+        id: true,
+        name: true,
+        nip: true,
+        email: true,
+        role: true,
+      },
+      orderBy: { name: "asc" },
+    }),
   ]);
 
   const formattedLogs: AuditLogItem[] = scores.map((s) => ({
@@ -38,10 +59,27 @@ export default async function AdminAuditLogsPage() {
     candidate: s.candidate,
   }));
 
+  const formattedCandidates: CandidateItem[] = candidates.map((c) => ({
+    id: c.id,
+    name: c.name,
+    candidateNip: c.candidateNip,
+    candidatePosition: c.candidatePosition,
+  }));
+
+  const formattedJudges: JudgeItem[] = judges.map((j) => ({
+    id: j.id,
+    name: j.name,
+    nip: j.nip,
+    email: j.email,
+    role: j.role,
+  }));
+
   return (
     <AuditLogsView
       initialLogs={formattedLogs}
-      totalCandidatesCount={totalCandidatesCount}
+      totalCandidatesCount={candidates.length}
+      allJudges={formattedJudges}
+      allCandidates={formattedCandidates}
     />
   );
 }
