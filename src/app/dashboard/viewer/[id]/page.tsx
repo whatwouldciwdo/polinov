@@ -10,6 +10,8 @@ interface Candidate {
   id: number;
   name: string;
   file: string | null;
+  filePpt?: string | null;
+  fileFeedback?: string | null;
   members?: any;
 }
 
@@ -19,8 +21,10 @@ export default function DocumentViewerPage() {
   const searchParams = useSearchParams();
   const id = params?.id as string;
   const backUrl = searchParams.get("from");
+  const initialType = searchParams.get("type") as "makalah" | "ppt" | "feedback" | null;
 
   const [candidate, setCandidate] = useState<Candidate | null>(null);
+  const [activeType, setActiveType] = useState<"makalah" | "ppt" | "feedback">(initialType || "makalah");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -32,8 +36,20 @@ export default function DocumentViewerPage() {
         const found = data.find((c) => String(c.id) === String(id));
         if (found) {
           setCandidate(found);
+          // If requested initialType doesn't have a file, pick whichever file is available
+          if (initialType === "ppt" && found.filePpt) {
+            setActiveType("ppt");
+          } else if (initialType === "feedback" && found.fileFeedback) {
+            setActiveType("feedback");
+          } else if (found.file) {
+            setActiveType("makalah");
+          } else if (found.filePpt) {
+            setActiveType("ppt");
+          } else if (found.fileFeedback) {
+            setActiveType("feedback");
+          }
         } else {
-          setError("Dokumen makalah tidak ditemukan.");
+          setError("Data inovasi tidak ditemukan.");
         }
         setLoading(false);
       })
@@ -42,7 +58,7 @@ export default function DocumentViewerPage() {
         setError("Gagal memuat dokumen.");
         setLoading(false);
       });
-  }, [id]);
+  }, [id, initialType]);
 
   const handleBack = () => {
     if (backUrl) {
@@ -63,7 +79,15 @@ export default function DocumentViewerPage() {
     );
   }
 
-  if (error || !candidate || !candidate.file) {
+  // Determine current active file
+  const currentFile =
+    activeType === "makalah"
+      ? candidate?.file
+      : activeType === "ppt"
+      ? candidate?.filePpt
+      : candidate?.fileFeedback;
+
+  if (error || !candidate || (!candidate.file && !candidate.filePpt && !candidate.fileFeedback)) {
     return (
       <div className="min-h-screen bg-[#1e2029] flex items-center justify-center p-4">
         <div className="neu-panel p-8 max-w-md text-center border border-white/5 space-y-4">
@@ -72,7 +96,7 @@ export default function DocumentViewerPage() {
           </div>
           <h2 className="text-base font-bold text-white">Dokumen Tidak Tersedia</h2>
           <p className="text-xs text-gray-400">
-            {error || "Berkas makalah belum diunggah untuk karya inovasi ini."}
+            {error || "Berkas belum diunggah untuk karya inovasi ini."}
           </p>
           <button
             type="button"
@@ -86,15 +110,13 @@ export default function DocumentViewerPage() {
     );
   }
 
-  const fileUrl = formatFileUrl(candidate.file);
-
-  const isPdf = fileUrl.toLowerCase().endsWith(".pdf");
+  const activeFileUrl = currentFile ? formatFileUrl(currentFile) : null;
 
   return (
     <div className="min-h-screen bg-[#1e2029] text-gray-100 flex flex-col font-cabin">
       
       {/* Top Header Bar with Back Button */}
-      <header className="neu-panel px-4 sm:px-8 py-3.5 border-b border-white/5 flex items-center justify-between gap-4 sticky top-0 z-30 shadow-lg">
+      <header className="neu-panel px-4 sm:px-8 py-3.5 border-b border-white/5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 sticky top-0 z-30 shadow-lg">
         
         {/* Left: Back Button + Title */}
         <div className="flex items-center gap-3 sm:gap-4 min-w-0">
@@ -124,7 +146,11 @@ export default function DocumentViewerPage() {
           <div className="min-w-0">
             <div className="flex items-center gap-2">
               <span className="neu-pill-inset px-2 py-0.5 text-[10px] font-semibold text-purple-400 font-mono uppercase">
-                Web Viewer Makalah
+                {activeType === "makalah"
+                  ? "Web Viewer Makalah"
+                  : activeType === "ppt"
+                  ? "Web Viewer PowerPoint"
+                  : "Web Viewer Feedback"}
               </span>
               <span className="text-gray-500 text-xs hidden sm:inline">&bull;</span>
               <span className="text-[11px] text-gray-400 font-mono hidden sm:inline">
@@ -137,43 +163,102 @@ export default function DocumentViewerPage() {
           </div>
         </div>
 
-        {/* Right: Actions */}
-        <div className="flex items-center gap-2.5 shrink-0">
-          <a
-            href={fileUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="neu-btn px-3 py-1.5 text-xs text-gray-300 hover:text-white hidden sm:flex items-center gap-1.5"
-            title="Buka file asli di tab baru"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
-              <polyline points="15 3 21 3 21 9"></polyline>
-              <line x1="10" y1="14" x2="21" y2="3"></line>
-            </svg>
-            <span>Tab Baru</span>
-          </a>
+        {/* Center: Tabs for Switching Makalah / PPT / Feedback */}
+        <div className="flex items-center gap-2 self-start sm:self-auto">
+          {candidate.file && (
+            <button
+              type="button"
+              onClick={() => setActiveType("makalah")}
+              className={`neu-btn px-3.5 py-1.5 text-xs font-semibold flex items-center gap-1.5 transition-all ${
+                activeType === "makalah"
+                  ? "text-purple-300 border border-purple-500/50 bg-purple-500/10 font-bold"
+                  : "text-gray-400 hover:text-white"
+              }`}
+            >
+              <span>Makalah</span>
+            </button>
+          )}
 
-          <a
-            href={fileUrl}
-            download
-            className="neu-btn-primary px-3.5 py-1.5 text-xs font-semibold flex items-center gap-1.5"
-            title="Unduh file dokumen"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-              <polyline points="7 10 12 15 17 10"></polyline>
-              <line x1="12" y1="15" x2="12" y2="3"></line>
-            </svg>
-            <span className="hidden sm:inline">Download</span>
-          </a>
+          {candidate.filePpt && (
+            <button
+              type="button"
+              onClick={() => setActiveType("ppt")}
+              className={`neu-btn px-3.5 py-1.5 text-xs font-semibold flex items-center gap-1.5 transition-all ${
+                activeType === "ppt"
+                  ? "text-orange-300 border border-orange-500/50 bg-orange-500/10 font-bold"
+                  : "text-gray-400 hover:text-white"
+              }`}
+            >
+              <span>PowerPoint</span>
+            </button>
+          )}
+
+          {candidate.fileFeedback && (
+            <button
+              type="button"
+              onClick={() => setActiveType("feedback")}
+              className={`neu-btn px-3.5 py-1.5 text-xs font-semibold flex items-center gap-1.5 transition-all ${
+                activeType === "feedback"
+                  ? "text-emerald-300 border border-emerald-500/50 bg-emerald-500/10 font-bold"
+                  : "text-gray-400 hover:text-white"
+              }`}
+            >
+              <span>Feedback</span>
+            </button>
+          )}
         </div>
+
+        {/* Right: Actions */}
+        {activeFileUrl && (
+          <div className="flex items-center gap-2.5 shrink-0">
+            <a
+              href={activeFileUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="neu-btn px-3 py-1.5 text-xs text-gray-300 hover:text-white hidden sm:flex items-center gap-1.5"
+              title="Buka file asli di tab baru"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                <polyline points="15 3 21 3 21 9"></polyline>
+                <line x1="10" y1="14" x2="21" y2="3"></line>
+              </svg>
+              <span>Tab Baru</span>
+            </a>
+
+            <a
+              href={activeFileUrl}
+              download
+              className="neu-btn-primary px-3.5 py-1.5 text-xs font-semibold flex items-center gap-1.5"
+              title="Unduh file dokumen"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                <polyline points="7 10 12 15 17 10"></polyline>
+                <line x1="12" y1="15" x2="12" y2="3"></line>
+              </svg>
+              <span className="hidden sm:inline">Download</span>
+            </a>
+          </div>
+        )}
       </header>
 
       {/* Main Document Display Area */}
       <main className="flex-1 p-2 sm:p-4 md:p-6 flex flex-col">
         <div className="neu-panel p-2 sm:p-3 flex-1 flex flex-col rounded-2xl border border-white/5 overflow-hidden shadow-2xl min-h-[82vh]">
-          <DocumentViewer fileUrl={fileUrl} title={candidate.name} />
+          {activeFileUrl ? (
+            <DocumentViewer
+              key={`${activeType}-${candidate.id}`}
+              fileUrl={activeFileUrl}
+              title={`${activeType.toUpperCase()} - ${candidate.name}`}
+            />
+          ) : (
+            <div className="flex-1 flex flex-col items-center justify-center p-8 text-center space-y-3">
+              <p className="text-sm text-gray-400">
+                Berkas {activeType} belum diunggah untuk karya ini.
+              </p>
+            </div>
+          )}
         </div>
       </main>
 

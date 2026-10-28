@@ -27,6 +27,8 @@ export async function POST(req: NextRequest) {
     const formData = await req.formData();
     const name = ((formData.get("name") || formData.get("title")) as string)?.trim();
     const file = formData.get("file") as File | null;
+    const filePpt = formData.get("file_ppt") as File | null;
+    const fileFeedback = formData.get("file_feedback") as File | null;
     const membersRaw = formData.get("members_data") as string | null;
 
     if (!name) {
@@ -48,6 +50,28 @@ export async function POST(req: NextRequest) {
       const fileName = `${Date.now()}-${safeName}`;
       await writeFile(path.join(uploadDir, fileName), buffer);
       filePath = `uploads/candidates/${fileName}`;
+    }
+
+    // Handle PowerPoint upload
+    let filePptPath: string | null = null;
+    if (filePpt && filePpt.size > 0) {
+      const bytes = await filePpt.arrayBuffer();
+      const buffer = Buffer.from(bytes);
+      const safeName = filePpt.name.replace(/[^a-zA-Z0-9.-]/g, "_");
+      const fileName = `ppt-${Date.now()}-${safeName}`;
+      await writeFile(path.join(uploadDir, fileName), buffer);
+      filePptPath = `uploads/candidates/${fileName}`;
+    }
+
+    // Handle Feedback upload
+    let fileFeedbackPath: string | null = null;
+    if (fileFeedback && fileFeedback.size > 0) {
+      const bytes = await fileFeedback.arrayBuffer();
+      const buffer = Buffer.from(bytes);
+      const safeName = fileFeedback.name.replace(/[^a-zA-Z0-9.-]/g, "_");
+      const fileName = `feedback-${Date.now()}-${safeName}`;
+      await writeFile(path.join(uploadDir, fileName), buffer);
+      fileFeedbackPath = `uploads/candidates/${fileName}`;
     }
 
     // Parse members list
@@ -95,6 +119,8 @@ export async function POST(req: NextRequest) {
         candidateNip,
         candidatePosition,
         file: filePath,
+        filePpt: filePptPath,
+        fileFeedback: fileFeedbackPath,
         members: membersList,
       },
     });

@@ -20,6 +20,8 @@ interface Candidate {
   id: number;
   name: string;
   file?: string | null;
+  filePpt?: string | null;
+  fileFeedback?: string | null;
   members?: MemberItem[] | string | null;
   isEvaluated?: boolean;
 }
@@ -42,6 +44,7 @@ export default function ScorePage() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [viewerOpen, setViewerOpen] = useState(false);
+  const [viewerType, setViewerType] = useState<"makalah" | "ppt" | "feedback">("makalah");
 
   useEffect(() => {
     fetch("/api/candidates")
@@ -463,42 +466,120 @@ export default function ScorePage() {
                         {activeCandidate.name}
                       </h3>
 
-                      <div className="pt-2 border-t border-white/5 space-y-2">
-                        {activeCandidate.file ? (
-                          <>
-                            <button
-                              type="button"
-                              onClick={() => setViewerOpen(true)}
-                              className="w-full neu-btn-primary py-2.5 px-4 text-xs font-bold text-white flex items-center justify-center gap-2 group shadow-lg"
-                            >
-                              <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="group-hover:scale-110 transition-transform">
-                                <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path>
-                                <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path>
-                              </svg>
-                              <span>Buka Dokumen (Web Viewer)</span>
-                            </button>
-
-                            <div className="flex items-center justify-between text-[11px] px-1 text-gray-400">
-                              <Link
-                                href={`/dashboard/viewer/${activeCandidate.id}?from=/dashboard/score`}
-                                className="text-purple-400 hover:underline flex items-center gap-1 font-medium"
+                      <div className="pt-2 border-t border-white/5 space-y-3">
+                        {/* 1. Makalah */}
+                        <div className="space-y-1.5">
+                          {activeCandidate.file ? (
+                            <>
+                              <button
+                                type="button"
+                                onClick={() => { setViewerType("makalah"); setViewerOpen(true); }}
+                                className="w-full neu-btn-primary py-2.5 px-4 text-xs font-bold text-white flex items-center justify-center gap-2 group shadow-lg"
                               >
-                                <span>Buka Halaman Penuh</span> &rarr;
-                              </Link>
-                              <a
-                                href={formatFileUrl(activeCandidate.file)}
-                                download
-                                className="hover:text-gray-200 hover:underline"
-                              >
-                                Unduh File
-                              </a>
+                                <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="group-hover:scale-110 transition-transform">
+                                  <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path>
+                                  <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path>
+                                </svg>
+                                <span>Lihat Makalah</span>
+                              </button>
+                              <div className="flex items-center justify-between text-[11px] px-1 text-gray-400">
+                                <Link
+                                  href={`/dashboard/viewer/${activeCandidate.id}?type=makalah&from=/dashboard/score`}
+                                  className="text-purple-400 hover:underline flex items-center gap-1 font-medium"
+                                >
+                                  <span>Halaman Penuh</span> &rarr;
+                                </Link>
+                                <a
+                                  href={formatFileUrl(activeCandidate.file)}
+                                  download
+                                  className="hover:text-gray-200 hover:underline"
+                                >
+                                  Unduh File
+                                </a>
+                              </div>
+                            </>
+                          ) : (
+                            <div className="p-2 neu-inset rounded-xl text-center text-xs text-gray-500 italic">
+                              Berkas makalah belum diunggah.
                             </div>
-                          </>
-                        ) : (
-                          <div className="text-xs text-gray-500 italic py-1">
-                            Berkas dokumen makalah belum diunggah.
-                          </div>
-                        )}
+                          )}
+                        </div>
+
+                        {/* 2. PowerPoint */}
+                        <div className="space-y-1.5">
+                          {activeCandidate.filePpt ? (
+                            <>
+                              <button
+                                type="button"
+                                onClick={() => { setViewerType("ppt"); setViewerOpen(true); }}
+                                className="w-full neu-btn py-2.5 px-4 text-xs font-bold text-orange-300 hover:text-white flex items-center justify-center gap-2 group border border-orange-500/20 hover:border-orange-400/40"
+                              >
+                                <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="group-hover:scale-110 transition-transform">
+                                  <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
+                                  <line x1="8" y1="21" x2="16" y2="21"></line>
+                                  <line x1="12" y1="17" x2="12" y2="21"></line>
+                                </svg>
+                                <span>Lihat PowerPoint</span>
+                              </button>
+                              <div className="flex items-center justify-between text-[11px] px-1 text-gray-400">
+                                <Link
+                                  href={`/dashboard/viewer/${activeCandidate.id}?type=ppt&from=/dashboard/score`}
+                                  className="text-orange-400 hover:underline flex items-center gap-1 font-medium"
+                                >
+                                  <span>Halaman Penuh</span> &rarr;
+                                </Link>
+                                <a
+                                  href={formatFileUrl(activeCandidate.filePpt)}
+                                  download
+                                  className="hover:text-gray-200 hover:underline"
+                                >
+                                  Unduh File
+                                </a>
+                              </div>
+                            </>
+                          ) : (
+                            <div className="p-2 neu-inset rounded-xl text-center text-xs text-gray-500 italic">
+                              Berkas PowerPoint belum diunggah.
+                            </div>
+                          )}
+                        </div>
+
+                        {/* 3. Feedback */}
+                        <div className="space-y-1.5">
+                          {activeCandidate.fileFeedback ? (
+                            <>
+                              <button
+                                type="button"
+                                onClick={() => { setViewerType("feedback"); setViewerOpen(true); }}
+                                className="w-full neu-btn py-2.5 px-4 text-xs font-bold text-emerald-300 hover:text-white flex items-center justify-center gap-2 group border border-emerald-500/20 hover:border-emerald-400/40"
+                              >
+                                <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="group-hover:scale-110 transition-transform">
+                                  <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                                </svg>
+                                <span>Lihat Feedback</span>
+                              </button>
+                              <div className="flex items-center justify-between text-[11px] px-1 text-gray-400">
+                                <Link
+                                  href={`/dashboard/viewer/${activeCandidate.id}?type=feedback&from=/dashboard/score`}
+                                  className="text-emerald-400 hover:underline flex items-center gap-1 font-medium"
+                                >
+                                  <span>Halaman Penuh</span> &rarr;
+                                </Link>
+                                <a
+                                  href={formatFileUrl(activeCandidate.fileFeedback)}
+                                  download
+                                  className="hover:text-gray-200 hover:underline"
+                                >
+                                  Unduh File
+                                </a>
+                              </div>
+                            </>
+                          ) : (
+                            <div className="p-2 neu-inset rounded-xl text-center text-xs text-gray-500 italic">
+                              Berkas feedback belum diunggah.
+                            </div>
+                          )}
+                        </div>
                       </div>
                     </div>
 
@@ -668,11 +749,11 @@ export default function ScorePage() {
       </div>
 
       {/* ================= IN-PAGE WEB VIEWER MODAL ================= */}
-      {viewerOpen && activeCandidate && activeCandidate.file && (
+      {viewerOpen && activeCandidate && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 md:p-6 bg-black/80 backdrop-blur-md animate-fadeIn">
           <div className="w-full max-w-6xl h-[94vh] neu-panel flex flex-col rounded-3xl border border-white/10 shadow-2xl overflow-hidden bg-[#1e2029]">
             
-            {/* Modal Header Bar with Prominent Back Button */}
+            {/* Modal Header Bar */}
             <div className="px-4 sm:px-6 py-3.5 border-b border-white/10 flex items-center justify-between gap-4 bg-[#181a22]">
               <div className="flex items-center gap-3 sm:gap-4 min-w-0">
                 <button
@@ -699,35 +780,106 @@ export default function ScorePage() {
                 </button>
 
                 <div className="min-w-0">
+                  <div className="flex items-center gap-2 mb-0.5">
+                    {viewerType === "makalah" && (
+                      <span className="neu-pill-inset px-2 py-0.5 text-[10px] font-semibold text-purple-400 font-mono uppercase">Makalah</span>
+                    )}
+                    {viewerType === "ppt" && (
+                      <span className="neu-pill-inset px-2 py-0.5 text-[10px] font-semibold text-orange-400 font-mono uppercase">PowerPoint</span>
+                    )}
+                    {viewerType === "feedback" && (
+                      <span className="neu-pill-inset px-2 py-0.5 text-[10px] font-semibold text-emerald-400 font-mono uppercase">Feedback</span>
+                    )}
+                  </div>
                   <h3 className="text-xs sm:text-sm font-bold text-white truncate max-w-md sm:max-w-xl md:max-w-2xl">
                     {activeCandidate.name}
                   </h3>
                 </div>
               </div>
 
-              {/* Right side controls */}
+              {/* Right side: Tab switcher + Actions */}
               <div className="flex items-center gap-2 shrink-0">
+                <div className="flex items-center gap-1.5 border-r border-white/10 pr-2">
+                  {activeCandidate.file && (
+                    <button
+                      type="button"
+                      onClick={() => setViewerType("makalah")}
+                      className={`neu-btn px-3 py-1.5 text-xs font-semibold flex items-center gap-1.5 transition-all ${
+                        viewerType === "makalah"
+                          ? "text-purple-300 border border-purple-500/50 bg-purple-500/10 font-bold"
+                          : "text-gray-400 hover:text-white"
+                      }`}
+                    >
+                      Makalah
+                    </button>
+                  )}
+                  {activeCandidate.filePpt && (
+                    <button
+                      type="button"
+                      onClick={() => setViewerType("ppt")}
+                      className={`neu-btn px-3 py-1.5 text-xs font-semibold flex items-center gap-1.5 transition-all ${
+                        viewerType === "ppt"
+                          ? "text-orange-300 border border-orange-500/50 bg-orange-500/10 font-bold"
+                          : "text-gray-400 hover:text-white"
+                      }`}
+                    >
+                      PowerPoint
+                    </button>
+                  )}
+                  {activeCandidate.fileFeedback && (
+                    <button
+                      type="button"
+                      onClick={() => setViewerType("feedback")}
+                      className={`neu-btn px-3 py-1.5 text-xs font-semibold flex items-center gap-1.5 transition-all ${
+                        viewerType === "feedback"
+                          ? "text-emerald-300 border border-emerald-500/50 bg-emerald-500/10 font-bold"
+                          : "text-gray-400 hover:text-white"
+                      }`}
+                    >
+                      Feedback
+                    </button>
+                  )}
+                </div>
+
                 <Link
-                  href={`/dashboard/viewer/${activeCandidate.id}?from=/dashboard/score`}
+                  href={`/dashboard/viewer/${activeCandidate.id}?type=${viewerType}&from=/dashboard/score`}
                   target="_blank"
-                  className="neu-btn px-3.5 py-2 text-xs text-gray-300 hover:text-white flex items-center gap-1.5"
+                  className="neu-btn px-3 py-1.5 text-xs text-gray-300 hover:text-white hidden sm:flex items-center gap-1.5"
+                  title="Buka dokumen ini di tab halaman penuh"
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
                     <polyline points="15 3 21 3 21 9"></polyline>
                     <line x1="10" y1="14" x2="21" y2="3"></line>
                   </svg>
-                  <span>Buka Tab Baru</span>
+                  <span>Tab Baru</span>
                 </Link>
               </div>
             </div>
 
             {/* Modal Document Viewer Body */}
             <div className="flex-1 p-2 sm:p-3 bg-[#13141a] overflow-hidden flex flex-col">
-              <DocumentViewer
-                fileUrl={formatFileUrl(activeCandidate.file)}
-                title={activeCandidate.name}
-              />
+              {viewerType === "makalah" && activeCandidate.file && (
+                <DocumentViewer
+                  key={`makalah-${activeCandidate.id}`}
+                  fileUrl={formatFileUrl(activeCandidate.file)}
+                  title={activeCandidate.name}
+                />
+              )}
+              {viewerType === "ppt" && activeCandidate.filePpt && (
+                <DocumentViewer
+                  key={`ppt-${activeCandidate.id}`}
+                  fileUrl={formatFileUrl(activeCandidate.filePpt)}
+                  title={`PowerPoint — ${activeCandidate.name}`}
+                />
+              )}
+              {viewerType === "feedback" && activeCandidate.fileFeedback && (
+                <DocumentViewer
+                  key={`feedback-${activeCandidate.id}`}
+                  fileUrl={formatFileUrl(activeCandidate.fileFeedback)}
+                  title={`Feedback — ${activeCandidate.name}`}
+                />
+              )}
             </div>
 
           </div>

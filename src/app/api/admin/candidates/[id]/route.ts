@@ -35,6 +35,8 @@ export async function PUT(
     const formData = await req.formData();
     const name = ((formData.get("name") || formData.get("title")) as string)?.trim();
     const file = formData.get("file") as File | null;
+    const filePpt = formData.get("file_ppt") as File | null;
+    const fileFeedback = formData.get("file_feedback") as File | null;
     const membersRaw = formData.get("members_data") as string | null;
 
     const data: any = {};
@@ -50,6 +52,24 @@ export async function PUT(
       const fileName = `${Date.now()}-${safeName}`;
       await writeFile(path.join(uploadDir, fileName), buffer);
       data.file = `uploads/candidates/${fileName}`;
+    }
+
+    if (filePpt && filePpt.size > 0) {
+      const bytes = await filePpt.arrayBuffer();
+      const buffer = Buffer.from(bytes);
+      const safeName = filePpt.name.replace(/[^a-zA-Z0-9.-]/g, "_");
+      const fileName = `ppt-${Date.now()}-${safeName}`;
+      await writeFile(path.join(uploadDir, fileName), buffer);
+      data.filePpt = `uploads/candidates/${fileName}`;
+    }
+
+    if (fileFeedback && fileFeedback.size > 0) {
+      const bytes = await fileFeedback.arrayBuffer();
+      const buffer = Buffer.from(bytes);
+      const safeName = fileFeedback.name.replace(/[^a-zA-Z0-9.-]/g, "_");
+      const fileName = `feedback-${Date.now()}-${safeName}`;
+      await writeFile(path.join(uploadDir, fileName), buffer);
+      data.fileFeedback = `uploads/candidates/${fileName}`;
     }
 
     if (membersRaw) {

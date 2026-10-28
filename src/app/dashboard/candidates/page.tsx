@@ -10,6 +10,8 @@ interface Candidate {
   candidateNip: string;
   candidatePosition: string;
   file: string | null;
+  filePpt?: string | null;
+  fileFeedback?: string | null;
 }
 
 export default function AdminCandidatesPage() {
@@ -141,18 +143,44 @@ export default function AdminCandidatesPage() {
                         : candidate.candidatePosition}
                     </td>
                     <td className="p-3 text-center">
-                      {candidate.file ? (
-                        <a
-                          href={`/${candidate.file}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="neu-pill px-3 py-1 text-xs font-semibold text-purple-300 hover:text-white inline-block"
-                        >
-                          Lihat File
-                        </a>
-                      ) : (
-                        <span className="text-xs text-gray-500 italic">-</span>
-                      )}
+                      <div className="flex flex-wrap items-center justify-center gap-1.5">
+                        {candidate.file && (
+                          <a
+                            href={`/${candidate.file}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="neu-pill px-2.5 py-0.5 text-[11px] font-semibold text-purple-300 hover:text-white"
+                            title="Lihat Makalah"
+                          >
+                            Makalah
+                          </a>
+                        )}
+                        {candidate.filePpt && (
+                          <a
+                            href={`/${candidate.filePpt}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="neu-pill px-2.5 py-0.5 text-[11px] font-semibold text-orange-300 hover:text-white border border-orange-500/30"
+                            title="Lihat PowerPoint"
+                          >
+                            PPT
+                          </a>
+                        )}
+                        {candidate.fileFeedback && (
+                          <a
+                            href={`/${candidate.fileFeedback}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="neu-pill px-2.5 py-0.5 text-[11px] font-semibold text-emerald-300 hover:text-white border border-emerald-500/30"
+                            title="Lihat Feedback"
+                          >
+                            Feedback
+                          </a>
+                        )}
+                        {!candidate.file && !candidate.filePpt && !candidate.fileFeedback && (
+                          <span className="text-xs text-gray-500 italic">-</span>
+                        )}
+                      </div>
                     </td>
                     <td className="p-3 text-right space-x-2">
                       <Link href={`/dashboard/candidates/edit/${candidate.id}`}>

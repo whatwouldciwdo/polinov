@@ -17,6 +17,7 @@ export default function DocumentViewer({ fileUrl, title }: Props) {
   const cleanPath = normalizedUrl.toLowerCase().split("?")[0];
   const isPdf = cleanPath.endsWith(".pdf");
   const isDocx = cleanPath.endsWith(".docx") || cleanPath.endsWith(".doc");
+  const isPpt = cleanPath.endsWith(".ppt") || cleanPath.endsWith(".pptx");
 
   useEffect(() => {
     let isMounted = true;
@@ -68,6 +69,8 @@ export default function DocumentViewer({ fileUrl, title }: Props) {
               );
             }
           }
+        } else if (isPpt) {
+          // PPT/PPTX is rendered via Google Docs Viewer — no pre-check needed
         }
 
         if (isMounted) {
@@ -87,7 +90,7 @@ export default function DocumentViewer({ fileUrl, title }: Props) {
     return () => {
       isMounted = false;
     };
-  }, [normalizedUrl, isDocx, isPdf]);
+  }, [normalizedUrl, isDocx, isPdf, isPpt]);
 
   if (loading) {
     return (
@@ -151,6 +154,25 @@ export default function DocumentViewer({ fileUrl, title }: Props) {
           ></div>
         </div>
       </div>
+    );
+  }
+
+  if (isPpt) {
+    // Build absolute URL for Google Docs Viewer
+    const absoluteUrl =
+      typeof window !== "undefined"
+        ? `${window.location.origin}${normalizedUrl.startsWith("/") ? "" : "/"}${normalizedUrl}`
+        : normalizedUrl;
+    const googleViewerUrl = `https://docs.google.com/gview?url=${encodeURIComponent(absoluteUrl)}&embedded=true`;
+
+    return (
+      <iframe
+        src={googleViewerUrl}
+        title={title}
+        className="w-full h-full flex-1 rounded-2xl bg-[#2a2c38] border border-white/10"
+        style={{ minHeight: "calc(100vh - 160px)" }}
+        allow="fullscreen"
+      />
     );
   }
 

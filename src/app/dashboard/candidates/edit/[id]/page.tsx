@@ -21,6 +21,8 @@ export default function EditCandidatePage() {
   const [candidate, setCandidate] = useState<any>(null);
   const [title, setTitle] = useState("");
   const [makalahFile, setMakalahFile] = useState<File | null>(null);
+  const [pptFile, setPptFile] = useState<File | null>(null);
+  const [feedbackFile, setFeedbackFile] = useState<File | null>(null);
   const [members, setMembers] = useState<MemberFormItem[]>([]);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -150,6 +152,8 @@ export default function EditCandidatePage() {
       if (makalahFile) {
         formData.append("file", makalahFile);
       }
+      if (pptFile) formData.append("file_ppt", pptFile);
+      if (feedbackFile) formData.append("file_feedback", feedbackFile);
 
       const membersData = validMembers.map((m) => ({
         name: m.name.trim(),
@@ -321,6 +325,98 @@ export default function EditCandidatePage() {
                       </svg>
                       <span className="truncate">{makalahFile.name}</span>
                       <span className="text-gray-400">({(makalahFile.size / 1024).toFixed(0)} KB)</span>
+                    </div>
+                  ) : (
+                    <p className="text-[11px] text-gray-500">Kosongkan jika tidak ingin mengganti berkas yang ada.</p>
+                  )}
+                </div>
+              </div>
+
+              {/* Berkas PowerPoint */}
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <label
+                    htmlFor="file_ppt"
+                    className="text-xs font-semibold text-gray-300 uppercase tracking-wider"
+                  >
+                    Berkas PowerPoint
+                  </label>
+                  {candidate.filePpt && (
+                    <a
+                      href={`/${candidate.filePpt}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-xs text-orange-400 hover:underline inline-flex items-center gap-1"
+                    >
+                      <span>Lihat Berkas Saat Ini</span> &rarr;
+                    </a>
+                  )}
+                </div>
+                <div className="neu-inset p-3.5 space-y-3">
+                  <input
+                    type="file"
+                    id="file_ppt"
+                    accept=".ppt,.pptx"
+                    onChange={(e) => {
+                      if (e.target.files && e.target.files[0]) {
+                        setPptFile(e.target.files[0]);
+                      }
+                    }}
+                    className="w-full text-xs text-gray-400 file:mr-3 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-orange-600 file:text-white hover:file:bg-orange-500 cursor-pointer"
+                  />
+                  {pptFile ? (
+                    <div className="flex items-center gap-2 text-xs font-mono text-orange-400 neu-pill px-3 py-1.5 border border-orange-500/20">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <polyline points="20 6 9 17 4 12"></polyline>
+                      </svg>
+                      <span className="truncate">{pptFile.name}</span>
+                      <span className="text-gray-400">({(pptFile.size / 1024).toFixed(0)} KB)</span>
+                    </div>
+                  ) : (
+                    <p className="text-[11px] text-gray-500">Kosongkan jika tidak ingin mengganti berkas yang ada.</p>
+                  )}
+                </div>
+              </div>
+
+              {/* Berkas Feedback */}
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <label
+                    htmlFor="file_feedback"
+                    className="text-xs font-semibold text-gray-300 uppercase tracking-wider"
+                  >
+                    Berkas Feedback
+                  </label>
+                  {candidate.fileFeedback && (
+                    <a
+                      href={`/${candidate.fileFeedback}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-xs text-emerald-400 hover:underline inline-flex items-center gap-1"
+                    >
+                      <span>Lihat Berkas Saat Ini</span> &rarr;
+                    </a>
+                  )}
+                </div>
+                <div className="neu-inset p-3.5 space-y-3">
+                  <input
+                    type="file"
+                    id="file_feedback"
+                    accept=".pdf,.doc,.docx,.ppt,.pptx"
+                    onChange={(e) => {
+                      if (e.target.files && e.target.files[0]) {
+                        setFeedbackFile(e.target.files[0]);
+                      }
+                    }}
+                    className="w-full text-xs text-gray-400 file:mr-3 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-emerald-600 file:text-white hover:file:bg-emerald-500 cursor-pointer"
+                  />
+                  {feedbackFile ? (
+                    <div className="flex items-center gap-2 text-xs font-mono text-emerald-400 neu-pill px-3 py-1.5 border border-emerald-500/20">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <polyline points="20 6 9 17 4 12"></polyline>
+                      </svg>
+                      <span className="truncate">{feedbackFile.name}</span>
+                      <span className="text-gray-400">({(feedbackFile.size / 1024).toFixed(0)} KB)</span>
                     </div>
                   ) : (
                     <p className="text-[11px] text-gray-500">Kosongkan jika tidak ingin mengganti berkas yang ada.</p>
