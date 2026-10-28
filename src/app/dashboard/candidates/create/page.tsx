@@ -297,13 +297,13 @@ export default function CreateCandidatePage() {
                   htmlFor="file_ppt"
                   className="block text-xs font-semibold text-gray-300 uppercase tracking-wider mb-2"
                 >
-                  Berkas PowerPoint <span className="text-gray-500 font-normal normal-case">(opsional)</span>
+                  Berkas PowerPoint / Bahan Presentasi <span className="text-gray-500 font-normal normal-case">(PDF / PPT / PPTX - opsional)</span>
                 </label>
                 <div className="neu-inset p-3.5 space-y-3">
                   <input
                     type="file"
                     id="file_ppt"
-                    accept=".ppt,.pptx"
+                    accept=".pdf,.ppt,.pptx"
                     onChange={(e) => {
                       if (e.target.files && e.target.files[0]) {
                         setPptFile(e.target.files[0]);
@@ -320,7 +320,7 @@ export default function CreateCandidatePage() {
                       <span className="text-gray-400">({(pptFile.size / 1024).toFixed(0)} KB)</span>
                     </div>
                   ) : (
-                    <p className="text-[11px] text-gray-500">Format yang didukung: PPT, PPTX</p>
+                    <p className="text-[11px] text-gray-500">Format yang didukung: PDF, PPT, PPTX</p>
                   )}
                 </div>
               </div>

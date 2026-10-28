@@ -339,7 +339,7 @@ export default function EditCandidatePage() {
                     htmlFor="file_ppt"
                     className="text-xs font-semibold text-gray-300 uppercase tracking-wider"
                   >
-                    Berkas PowerPoint
+                    Berkas PowerPoint / Bahan Presentasi <span className="text-gray-500 font-normal normal-case">(PDF / PPT / PPTX)</span>
                   </label>
                   {candidate.filePpt && (
                     <a
@@ -356,7 +356,7 @@ export default function EditCandidatePage() {
                   <input
                     type="file"
                     id="file_ppt"
-                    accept=".ppt,.pptx"
+                    accept=".pdf,.ppt,.pptx"
                     onChange={(e) => {
                       if (e.target.files && e.target.files[0]) {
                         setPptFile(e.target.files[0]);
@@ -373,7 +373,7 @@ export default function EditCandidatePage() {
                       <span className="text-gray-400">({(pptFile.size / 1024).toFixed(0)} KB)</span>
                     </div>
                   ) : (
-                    <p className="text-[11px] text-gray-500">Kosongkan jika tidak ingin mengganti berkas yang ada.</p>
+                    <p className="text-[11px] text-gray-500">Kosongkan jika tidak ingin mengganti berkas yang ada (Format didukung: PDF, PPT, PPTX).</p>
                   )}
                 </div>
               </div>
