@@ -7,6 +7,7 @@ import Toast from "@/components/Toast";
 interface Candidate {
   id: number;
   name: string;
+  category?: string | null;
   candidateNip: string;
   candidatePosition: string;
   file: string | null;
@@ -80,6 +81,7 @@ export default function AdminCandidatesPage() {
               <tr className="border-b border-white/5">
                 <th className="p-3 text-xs font-bold text-purple-400 uppercase tracking-wider text-center w-12">#</th>
                 <th className="p-3 text-xs font-bold text-purple-400 uppercase tracking-wider">Judul Inovasi</th>
+                <th className="p-3 text-xs font-bold text-purple-400 uppercase tracking-wider text-center w-28">Kategori</th>
                 <th className="p-3 text-xs font-bold text-purple-400 uppercase tracking-wider">NIP Kandidat</th>
                 <th className="p-3 text-xs font-bold text-purple-400 uppercase tracking-wider">Jabatan</th>
                 <th className="p-3 text-xs font-bold text-purple-400 uppercase tracking-wider text-center">Berkas</th>
@@ -89,7 +91,7 @@ export default function AdminCandidatesPage() {
             <tbody className="divide-y divide-white/5">
               {candidates.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="p-6 text-center text-sm text-gray-400">
+                  <td colSpan={7} className="p-6 text-center text-sm text-gray-400">
                     Belum ada data makalah kandidat.
                   </td>
                 </tr>
@@ -131,6 +133,17 @@ export default function AdminCandidatesPage() {
                           </div>
                         </div>
                       )}
+                    </td>
+                    <td className="p-3 text-center">
+                      <span
+                        className={`neu-pill-inset px-2.5 py-0.5 text-[10px] font-bold font-mono uppercase inline-block whitespace-nowrap ${
+                          candidate.category === "NON TEKNIK"
+                            ? "text-purple-400 border border-purple-500/30"
+                            : "text-emerald-400 border border-emerald-500/30"
+                        }`}
+                      >
+                        {candidate.category || "TEKNIK"}
+                      </span>
                     </td>
                     <td className="p-3 text-xs text-gray-300 font-mono">
                       {(candidate as any).members && Array.isArray((candidate as any).members) && (candidate as any).members.length > 0

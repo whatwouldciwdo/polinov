@@ -42,6 +42,11 @@ export async function PUT(
     const data: any = {};
     if (name) data.name = name;
 
+    const categoryRaw = formData.get("category") as string | null;
+    if (categoryRaw) {
+      data.category = categoryRaw.trim().toUpperCase() === "NON TEKNIK" ? "NON TEKNIK" : "TEKNIK";
+    }
+
     const uploadDir = path.join(process.cwd(), "public", "uploads", "candidates");
     await mkdir(uploadDir, { recursive: true });
 

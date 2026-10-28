@@ -29,6 +29,7 @@ model User {
 model Candidate {
   id                Int      @id @default(autoincrement())
   name              String
+  category          String?  @default("TEKNIK")
   candidateNip      String   @map("candidate_nip")
   candidatePosition String   @map("candidate_position")
   sejak             String?

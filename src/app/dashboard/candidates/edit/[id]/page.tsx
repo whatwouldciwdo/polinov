@@ -20,6 +20,7 @@ export default function EditCandidatePage() {
   const params = useParams();
   const [candidate, setCandidate] = useState<any>(null);
   const [title, setTitle] = useState("");
+  const [category, setCategory] = useState("TEKNIK");
   const [makalahFile, setMakalahFile] = useState<File | null>(null);
   const [pptFile, setPptFile] = useState<File | null>(null);
   const [feedbackFile, setFeedbackFile] = useState<File | null>(null);
@@ -33,6 +34,7 @@ export default function EditCandidatePage() {
       .then((data) => {
         setCandidate(data);
         setTitle(data.name || "");
+        setCategory(data.category || "TEKNIK");
 
         // If candidate has members json
         if (data.members && Array.isArray(data.members) && data.members.length > 0) {
@@ -149,6 +151,7 @@ export default function EditCandidatePage() {
     try {
       const formData = new FormData();
       formData.append("name", title.trim());
+      formData.append("category", category);
       if (makalahFile) {
         formData.append("file", makalahFile);
       }
@@ -282,6 +285,31 @@ export default function EditCandidatePage() {
                     placeholder="Judul karya inovasi"
                     required
                   ></textarea>
+                </div>
+              </div>
+
+              {/* Kategori Inovasi */}
+              <div>
+                <label
+                  htmlFor="category"
+                  className="block text-xs font-semibold text-gray-300 uppercase tracking-wider mb-2"
+                >
+                  Bidang Kategori Inovasi <span className="text-red-400">*</span>
+                </label>
+                <div className="neu-inset px-4 py-2">
+                  <select
+                    id="category"
+                    value={category}
+                    onChange={(e) => setCategory(e.target.value)}
+                    className="w-full bg-transparent border-none focus:outline-none text-white text-sm cursor-pointer"
+                  >
+                    <option value="TEKNIK" className="bg-[#1a1c24] text-white">
+                      TEKNIK
+                    </option>
+                    <option value="NON TEKNIK" className="bg-[#1a1c24] text-white">
+                      NON TEKNIK
+                    </option>
+                  </select>
                 </div>
               </div>
 

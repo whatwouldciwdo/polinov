@@ -26,6 +26,8 @@ export async function POST(req: NextRequest) {
   try {
     const formData = await req.formData();
     const name = ((formData.get("name") || formData.get("title")) as string)?.trim();
+    const categoryRaw = ((formData.get("category") as string) || "TEKNIK").trim().toUpperCase();
+    const category = categoryRaw === "NON TEKNIK" ? "NON TEKNIK" : "TEKNIK";
     const file = formData.get("file") as File | null;
     const filePpt = formData.get("file_ppt") as File | null;
     const fileFeedback = formData.get("file_feedback") as File | null;
@@ -116,6 +118,7 @@ export async function POST(req: NextRequest) {
     await (prisma.candidate as any).create({
       data: {
         name,
+        category,
         candidateNip,
         candidatePosition,
         file: filePath,
