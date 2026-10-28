@@ -385,7 +385,7 @@ export default function EditCandidatePage() {
                     htmlFor="file_feedback"
                     className="text-xs font-semibold text-gray-300 uppercase tracking-wider"
                   >
-                    Berkas Feedback
+                    Berkas Feedback <span className="text-gray-500 font-normal normal-case">(DOCX / Word / PDF - opsional)</span>
                   </label>
                   {candidate.fileFeedback && (
                     <a
@@ -402,7 +402,7 @@ export default function EditCandidatePage() {
                   <input
                     type="file"
                     id="file_feedback"
-                    accept=".pdf,.doc,.docx,.ppt,.pptx"
+                    accept=".docx,.doc,.pdf"
                     onChange={(e) => {
                       if (e.target.files && e.target.files[0]) {
                         setFeedbackFile(e.target.files[0]);
@@ -419,7 +419,7 @@ export default function EditCandidatePage() {
                       <span className="text-gray-400">({(feedbackFile.size / 1024).toFixed(0)} KB)</span>
                     </div>
                   ) : (
-                    <p className="text-[11px] text-gray-500">Kosongkan jika tidak ingin mengganti berkas yang ada.</p>
+                    <p className="text-[11px] text-gray-500">Kosongkan jika tidak ingin mengganti berkas yang ada (Format didukung: DOCX, DOC, PDF).</p>
                   )}
                 </div>
               </div>
